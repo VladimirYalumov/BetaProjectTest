@@ -57,32 +57,35 @@ func main() {
 	counters := NewCounters()
 
 	countsGrouped := orm.FindAllVotes()
-	for _, v := range countsGrouped {
-		key := v.Vid
-		value, ok := voteTypes.Load(key)
-		if ok {
-			voteTypes.Store(key, v.Count+value)
-		} else {
-			voteTypes.Store(key, v.Count)
-		}
-		key = services.MakeKey(v.Vid, v.Oid)
-		value, ok = counters.Load(key)
-		if ok {
-			counters.Store(key, v.Count+value)
-		} else {
-			counters.Store(key, v.Count)
-		}
-	}
 
-	blockCh := make(chan map[string]interface{})
+	if len(countsGrouped) > 0 {
+		for _, v := range countsGrouped {
+			key := v.Vid
+			value, ok := voteTypes.Load(key)
+			if ok {
+				voteTypes.Store(key, v.Count+value)
+			} else {
+				voteTypes.Store(key, v.Count)
+			}
+			key = services.MakeKey(v.Vid, v.Oid)
+			value, ok = counters.Load(key)
+			if ok {
+				counters.Store(key, v.Count+value)
+			} else {
+				counters.Store(key, v.Count)
+			}
+		}
 
-	for _, v := range countsGrouped {
-		votesInOption, _ := counters.Load(services.MakeKey(v.Vid, v.Oid))
-		option, _ := voteTypes.Load(v.Vid)
-		countersOptionsOld.Store(services.MakeKey(v.Vid, v.Oid), float64(votesInOption)/float64(option)*100)
+		for _, v := range countsGrouped {
+			votesInOption, _ := counters.Load(services.MakeKey(v.Vid, v.Oid))
+			option, _ := voteTypes.Load(v.Vid)
+			countersOptionsOld.Store(services.MakeKey(v.Vid, v.Oid), float64(votesInOption)/float64(option)*100)
+		}
 	}
 
 	var msgs <-chan amqp.Delivery
+	blockCh := make(chan map[string]interface{})
+
 	msgs, globalConnectionError = ch.Consume(
 		services.VotingRoute, // queue
 		"",                   // consumer
@@ -109,6 +112,15 @@ func main() {
 			break
 		}
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					datas := make(map[string]interface{}) // it is only example
+					logger.GetInstance().DefinePid("", "default", "")
+					datas["msg"] = "critical error"
+					datas["body"] = r
+					_ = logger.GetInstance().Info(datas)
+				}
+			}()
 			for {
 				t := <-blockCh
 				datas := make(map[string]interface{}) // it is only example
