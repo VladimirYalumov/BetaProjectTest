@@ -1,0 +1,14 @@
+config:
+  rabbit_host_port: "127.0.0.1:5673"
+  rabbit_user: "guest"
+  rabbit_pass: "guest"
+  mongo_host_port: "127.0.0.1:27017"
+  mongo_user: "root"
+  mongo_pass: "rootpassword"
+mongo:
+  local:
+    voting: "voting"
+  undefined:
+    default: "default"
+
+

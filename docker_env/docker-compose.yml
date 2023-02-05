@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres
+    container_name: "postgres"
+    environment:
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: deewave
+      PGDATA: /var/postgres_data
+    volumes:
+      - postgres_data:/var/postgres_data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis
+    container_name: "redis"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6377:6379"
+
+  mongodb:
+    image: mongo:latest
+    container_name: "mongodb"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+
+  rabbit:
+    build: ./rabbitmq
+    container_name: "rabbit"
+    ports:
+      - 5673:5672
+      - 15673:15672
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_VHOST: "/"
+
+volumes:
+  postgres_data:
+  mongodb_data_container:
