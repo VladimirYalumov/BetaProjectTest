@@ -156,12 +156,14 @@ func main() {
 			key, voteTypesKey := services.HandleRequest(d)
 			if key != "" {
 				o, ok := voteTypes.Load(voteTypesKey)
+				first := false
 				if ok {
 					voteTypes.Inc(voteTypesKey)
 					o++
 				} else {
 					voteTypes.Store(voteTypesKey, 1)
 					o = 1
+					first = true
 				}
 				v, ok := counters.Load(key)
 				if ok {
@@ -170,11 +172,12 @@ func main() {
 				} else {
 					counters.Store(key, 1)
 					v = 1
+					first = true
 				}
 
 				value, ok := countersOptionsOld.Load(key)
 				counterOptionsNew := float64(v) / float64(o) * 100
-				if ok && (counterOptionsNew-value) > 1 {
+				if (ok && (counterOptionsNew-value) > 1) || first {
 					Key := strings.Split(key, "_")
 					countersOptionsOld.Store(key, counterOptionsNew)
 					temporaryMap := countersOptionsOld.m
